@@ -1,6 +1,5 @@
 #include "main.h"
 #include "reactions.h"
-#include "util/reader.h"
 
 using namespace arma;
 using namespace std;
@@ -23,8 +22,20 @@ int main(int argc, char** argv){
 	for (int i = 0; i < config.size(); ++i){
 		double ss = steady_states[i];
 		double spread = ss / 10.0;
-		config[i] = init_lattice(m, n, ss, spread);
+
+        /* Periodic BC. Although we are only interested in an m-by-n matrix,
+            extra rows and columns are created to "wrap the matrix around"
+        */
+
+        int M = m+2, N = n+2;
+        config[i] = init_lattice(M, N, ss, spread);
+        config[i].col(0) = config[i].col(n);
+        config[i].col(n+1) = config[i].col(1);
+        config[i].row(0) = config[i].row(m);
+        config[i].row(m+1) = config[i].row(1);
 	}
+
+    cout << config[0] << endl;
 
 	/* TEST CASE: initial cap distribution */
     // config[0] = zeros<mat>(m,n);
@@ -43,7 +54,7 @@ int main(int argc, char** argv){
     // Define the differential changes in R and S
     mat dR(m,n), dS(m,n), laplacianR(m,n), laplacianS(m,n);
     double Vs = RDParams["Vs"]; // Ratio of diffusion coefficients, scaffold to receptor
-
+    
     for (int i = 0; i < StepLimit; ++i){
 		// Compute Laplacians here, for repeated uses
 		// Also compute the steric hindrance term E
@@ -86,6 +97,28 @@ mat init_lattice(int &m, int &n, double &steady_state, double &spread){
     config *= spread;
     config += steady_state;
     return config;
+}
+
+mat laplacianOpt(mat &A, double &dx){
+    unsigned m = A.n_rows;
+    unsigned n = A.n_cols;
+    mat Z = zeros(size(A));
+
+    double top, bottom, left, right, center;
+
+    for (unsigned int y = 1; y < m+2; ++y){
+        for (unsigned int x = 1; x < n+2; ++x){
+            top = A(y+1,x);
+            bottom = A(y-1,x);
+            left = A(y,x-1);
+            right = A(y,x+1);
+            center = A(y,x);
+
+            Z(y,x) = (top+left+bottom+right-4*center)/(dx*dx);
+        }
+    }
+
+    return Z;
 }
 
 mat laplacian(mat &A, double &dx){
