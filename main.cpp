@@ -22,20 +22,8 @@ int main(int argc, char** argv){
 	for (int i = 0; i < config.size(); ++i){
 		double ss = steady_states[i];
 		double spread = ss / 10.0;
-
-        /* Periodic BC. Although we are only interested in an m-by-n matrix,
-            extra rows and columns are created to "wrap the matrix around"
-        */
-
-        int M = m+2, N = n+2;
-        config[i] = init_lattice(M, N, ss, spread);
-        config[i].col(0) = config[i].col(n);
-        config[i].col(n+1) = config[i].col(1);
-        config[i].row(0) = config[i].row(m);
-        config[i].row(m+1) = config[i].row(1);
+        config[i] = init_lattice(m, n, ss, spread);
 	}
-
-    cout << config[0] << endl;
 
 	/* TEST CASE: initial cap distribution */
     // config[0] = zeros<mat>(m,n);
@@ -54,13 +42,13 @@ int main(int argc, char** argv){
     // Define the differential changes in R and S
     mat dR(m,n), dS(m,n), laplacianR(m,n), laplacianS(m,n);
     double Vs = RDParams["Vs"]; // Ratio of diffusion coefficients, scaffold to receptor
-    
+
     for (int i = 0; i < StepLimit; ++i){
 		// Compute Laplacians here, for repeated uses
 		// Also compute the steric hindrance term E
 		E = (1 - config[0] - config[1])/D;
-		laplacianR = laplacian(config[0], DeltaX);
-		laplacianS = laplacian(config[1], DeltaX);
+		laplacian(config[0], laplacianR, DeltaX);
+		laplacian(config[1], laplacianS, DeltaX);
 
         // Compute reactions
         dR = F_rxn_C(config, E, RDParams) * DeltaT;
@@ -99,33 +87,10 @@ mat init_lattice(int &m, int &n, double &steady_state, double &spread){
     return config;
 }
 
-mat laplacianOpt(mat &A, double &dx){
-    unsigned m = A.n_rows;
-    unsigned n = A.n_cols;
-    mat Z = zeros(size(A));
-
-    double top, bottom, left, right, center;
-
-    for (unsigned int y = 1; y < m+2; ++y){
-        for (unsigned int x = 1; x < n+2; ++x){
-            top = A(y+1,x);
-            bottom = A(y-1,x);
-            left = A(y,x-1);
-            right = A(y,x+1);
-            center = A(y,x);
-
-            Z(y,x) = (top+left+bottom+right-4*center)/(dx*dx);
-        }
-    }
-
-    return Z;
-}
-
-mat laplacian(mat &A, double &dx){
+void laplacian(mat &A, mat &Z, double &dx){
     /* Return the Laplacian of A; assume periodic boundary conditions */
     unsigned m = A.n_rows-1;
     unsigned n = A.n_cols-1;
-    mat Z(m+1,n+1);
 
     double top, bottom, left, right, center;
 
@@ -155,6 +120,4 @@ mat laplacian(mat &A, double &dx){
             Z(y,x) = (top+left+bottom+right-4*center)/(dx*dx);
         }
     }
-
-    return Z;
 }

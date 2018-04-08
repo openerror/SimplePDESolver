@@ -19,8 +19,7 @@ double DeltaT;               /* Spatial discretization of lattice */
 
 /* Functions & function prototypes ********************************************/
 mat init_lattice(int &m, int &n, double &steady_state, double &spread);
-mat laplacian(mat &A, double &dx);
-mat laplacianOpt(mat &A, double &dx);
+void laplacian(mat &A, mat &Z, double &dx);
 
 void InitParams() {
 	// Initialize simulation parameters
