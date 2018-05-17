@@ -1,10 +1,11 @@
 ALL: MFSolve
 
-# ARMA_LIB="/usr/local/Cellar/armadillo/8.400.0/lib"
-# ARMA_INC="/usr/local/Cellar/armadillo/8.400.0/include"
+ARMA_LIB="/Users/everestl/CustomG++Libs/lib"
+ARMA_INC="/Users/everestl/CustomG++Libs/include"
 
 MFSolve: ./reactions.cpp ./main.cpp
-	g++ -O3 -std=c++11 reactions.cpp main.cpp -larmadillo -o MFSolve
+	g++-7 -O3 -fopenmp -L $(ARMA_LIB) -I $(ARMA_INC)\
+	 -std=c++11 reactions.cpp main.cpp -larmadillo -o MFSolve
 
 clean:
 	rm MFSolve
